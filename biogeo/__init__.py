@@ -1,9 +1,10 @@
-import scipy.optimize.nnls as scinnls
+import gsw
 import xarray as xr
 import numpy as np
 import pandas as pd
 import cbsyst as cb
-import gsw
+import scipy.optimize.nnls as scinnls
+# import config
 
 '''
 S:        salinity (PSU)
@@ -23,18 +24,32 @@ Alk_pre:  preformed alkalinity
 '''
 
 # Redfield Ratio
-global R_on
-global R_op
-global R_np
-global R_co
-
 R_on = 9
 R_op = 135
 R_np = 16
 R_co = 0.69
 
 def aou(O,theta,S):
-    # origninal MATLAB script witten by Edward T. Peltzer, MBARI
+	"""
+    Apparent Oxygen Utilization (AOU). This is the difference between
+    oxygen concentration at saturation and the measured oxygen 
+    concentration. Origninal MATLAB script witten by Edward T. Peltzer,
+    MBARI
+    
+    Parameters
+    ----------
+    O : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Oxygen (umol/kg)
+    theta : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Potential temperature (Celsius)
+    S : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Salinity (pss-78)
+        
+    Returns
+    -------
+    AOU : `numpy.array` or `xarray.DataArray`
+        An array of AOU values
+    """
     
     T_1 = (theta + 273.15)/100
     
@@ -53,6 +68,21 @@ def aou(O,theta,S):
     return AOU
 
 def PO(P,O):
+	"""
+	Phosphate based conservative ocean circulation tracer (Broecker 1974)
+    
+    Parameters
+    ----------
+    P : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Phosphate (units must be consistent with O)
+    O : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Oxygen (units must be consistent with P)
+        
+    Returns
+    -------
+    PO : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        An array of PO values
+    """
 
     PO = R_op*P + O
 
@@ -63,6 +93,24 @@ def PO(P,O):
     return PO
 
 def NO(N,O):
+	"""
+	Nitrate based ocean circulation tracer (Broecker 1974). At the time
+	of publication, production of nitrate by marine organisms was 
+	unknown, thus this tracer is referred to as conservative. The
+	interior biological source makes this tracer non-conservative
+    
+    Parameters
+    ----------
+    N : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Nitrate (units must be consistent with O)
+    O : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Oxygen (units must be consistent with P)
+        
+    Returns
+    -------
+    NO : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        An array of NO values
+    """
 
     NO = R_on*N + O
 
@@ -73,6 +121,22 @@ def NO(N,O):
     return NO
 
 def N_pre(N,AOU):
+	"""
+	Preformed Nitrate. The effects of post-subduction biologically 
+	driven change in nitrate concentration have been removed.
+    
+    Parameters
+    ----------
+    N : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Nitrate (units must be consistent with O)
+    AOU : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Apparent Oxygen Utilization (units must be consistent with N)
+        
+    Returns
+    -------
+    N_pre : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        An array of preformed nitrate values
+    """
 
     N_pre = N-AOU/R_on
 
@@ -82,18 +146,24 @@ def N_pre(N,AOU):
 
     return N_pre
 
-def Nstar(N,P):
-
-    Nstar = N-R_np*P
-
-    if (type(Nstar) == pd.core.series.Series) or (type(Nstar) == xr.core.dataarray):
-
-        Nstar.name = 'N*'
-
-    return Nstar
-
 def P_pre(P,AOU):
+    """
+	Preformed Phosphate. The effects of post-subduction biologically 
+	driven change in phosphate concentration have been removed.
     
+    Parameters
+    ----------
+    P : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Phosphate (units must be consistent with O)
+    AOU : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Apparent Oxygen Utilization (units must be consistent with P)
+        
+    Returns
+    -------
+    P_pre : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        An array of preformed phosphate values
+    """
+
     P_pre = P-AOU/R_op
 
     if (type(P_pre) == pd.core.series.Series) or (type(P_pre) == xr.core.dataarray):
@@ -102,8 +172,49 @@ def P_pre(P,AOU):
 
     return P_pre
 
+def Nstar(N,P):
+	"""
+	N* is indicative of nitrogen fixation. See Gruber and Sarmiento (1997, 2002)
+    
+    Parameters
+    ----------
+    N : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Nitrate (umol/kg)
+    P : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Phosphate (umol/kg)
+        
+    Returns
+    -------
+    Nstar : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        An array of N* values
+    """
+
+    Nstar = N-R_np*P + 2.9
+
+    if (type(Nstar) == pd.core.series.Series) or (type(Nstar) == xr.core.dataarray):
+
+        Nstar.name = 'N*'
+
+    return Nstar
+
 
 def dc_dis(theta,S,N,P,O,dc_dis_eomp=np.NaN):
+
+	"""
+	N* is indicative of nitrogen fixation. See Gruber and Sarmiento (1997, 2002)
+    
+    Parameters
+    ----------
+    N : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Nitrate (umol/kg)
+    P : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Phosphate (umol/kg)
+        
+    Returns
+    -------
+    Nstar : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        An array of N* values
+    """
     
     a = np.ones(theta.shape)
     b = np.ones(theta.shape)
