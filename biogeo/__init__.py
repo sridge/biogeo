@@ -201,7 +201,7 @@ def Nstar(N,P):
 def dc_dis(theta,S,N,P,O,dc_dis_eomp=np.NaN):
 
 	"""
-	N* is indicative of nitrogen fixation. See Gruber and Sarmiento (1997, 2002)
+	Air-sea carbon disequilibrium, used to calculate anthropogenic carbon
     
     Parameters
     ----------
