@@ -205,10 +205,17 @@ def dc_dis(theta,S,N,P,O,dc_dis_eomp=np.NaN):
     
     Parameters
     ----------
+    theta : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Potential temperature (Celsius)
+    S : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Salinity (pss-78)
     N : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
         Nitrate (umol/kg)
     P : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
         Phosphate (umol/kg)
+    O : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Oxygen (umol/kg)
+
         
     Returns
     -------
@@ -260,7 +267,35 @@ def dc_dis(theta,S,N,P,O,dc_dis_eomp=np.NaN):
     
     return dc_dis
 
-def dcstar(DIC,S,Alk,P,O,theta,AOU,Alk_pre_eomp=np.nan,N=np.nan,Si=np.nan,Gruber=True):
+def dcstar(DIC,Alk,theta,S,P,O,AOU,Alk_pre_eomp=np.nan,N=np.nan,Si=np.nan,Gruber=True):
+
+	"""
+	∆C* tracer, via the Gruber et al. 1996 method or the Vasquez-
+	Rodriguez et al 2008 method. It is a passive tracer that is used in 
+	the calculation of athropogenic carbon. 
+    
+    Parameters
+    ----------
+	DIC : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+		DIC (umol/kg)
+	Alk : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+		Alkalinity (umol/kg)
+	theta : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Potential temperature (Celsius)
+    S : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Salinity (pss-78)
+    P : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Phosphate (umol/kg)
+    O : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Oxygen (umol/kg)
+    AOU : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Apparent Oxygen Utilization (umol/kg)
+
+    Returns
+    -------
+    dcstar : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        An array of ∆C* values
+    """
     
     if Gruber == True:
 
