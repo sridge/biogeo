@@ -329,8 +329,10 @@ def dcstar(DIC,Alk,theta,S,P,O,AOU,N=None,Si=None,Gruber=True):
     return dcstar
 
 def csat_ant(theta,S):
+
 	""" 
-	Saturation concentration of anthropogenic carbon. Used in calculation of anthropogenic carbon
+	Saturation concentration of anthropogenic carbon. Used in calculation
+	of anthropogenic carbon (Rodriguez et al. 2008)
 
 	Parameters
     ----------
@@ -356,6 +358,11 @@ def csat_ant(theta,S):
 
 def Alk_pre(theta,S,N,P,O,AOU,Si):
 	"""
+	Preformed alkalinity (Vázquez-Rodríguez et al. 2008). Used in calculation
+	of anthropogenic carbon (Vázquez-Rodríguez et al. 2008)
+
+	Parameters
+    ----------
     theta : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
         Potential temperature (Celsius)
     S : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
@@ -370,6 +377,11 @@ def Alk_pre(theta,S,N,P,O,AOU,Si):
         Apparent Oxygen Utilization (umol/kg)
     Si : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
     	Silicate (umol/kg)
+
+    Returns
+    -------
+    Alk_pre : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+    	An array of preformed alkalinity values (umol/kg)
     """
 
     Alk_pre_eomp = np.zeros(theta.size)
@@ -389,7 +401,35 @@ def Alk_pre(theta,S,N,P,O,AOU,Si):
 
     return Alk_pre
 
-def dCa(N,O,P,Si,Alk,S,theta):
+def dCa(Alk,theta,S,N,P,O,Si):
+
+	"""
+	CaCO3 pump contribution to DIC (Vázquez-Rodríguez et al. 2008)
+
+	Parameters
+    ----------
+	Alk : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+		Alkalinity (umol/kg)
+    theta : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Potential temperature (Celsius)
+    S : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Salinity (pss-78)
+    N : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Nitrate (umol/kg)
+    P : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Phosphate (umol/kg)
+    O : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Oxygen (umol/kg)
+    AOU : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Apparent Oxygen Utilization (umol/kg)
+    Si : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+    	Silicate (umol/kg)
+
+    Returns
+    -------
+    dCa : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+    	An array of ∆Ca values (umol/kg)
+    """
 
     PA_pre = 587.7 + 46.2*S + 3.27*theta + 0.24*NO(N,O) + 0.73*Si
 
@@ -403,7 +443,37 @@ def dCa(N,O,P,Si,Alk,S,theta):
     
     return dCa
 
-def DIC_pre(DIC,Alk,N,O,P,Si,S,theta,AOU):
+def DIC_pre(DIC,Alk,theta,S,N,P,O,AOU,Si):
+
+	"""
+	Preformed DIC (Vázquez-Rodríguez et al. 2008)
+
+	Parameters
+    ----------
+    DIC : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+		DIC (umol/kg)
+	Alk : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+		Alkalinity (umol/kg)
+    theta : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Potential temperature (Celsius)
+    S : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Salinity (pss-78)
+    N : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Nitrate (umol/kg)
+    P : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Phosphate (umol/kg)
+    O : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Oxygen (umol/kg)
+    AOU : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Apparent Oxygen Utilization (umol/kg)
+    Si : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+    	Silicate (umol/kg)
+
+    Returns
+    -------
+    DIC_pre : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+    	An array of preformed DIC values (umol/kg)
+    """
 
     DIC_pre = DIC-R_co*AOU-dCa(N,O,P,Si,Alk,S,theta)
 
@@ -413,7 +483,37 @@ def DIC_pre(DIC,Alk,N,O,P,Si,S,theta,AOU):
    
     return DIC_pre
 
-def eOMP(theta,S,Si,O,N,P,AOU):
+def eOMP(theta,S,N,P,O,AOU,Si):
+
+	"""
+	This function determines the contribubution of various watermasses
+	(Vázquez-Rodríguez et al. 2008). Used in calculation of anthropogenic
+	carbon (Vázquez-Rodríguez et al. 2008)
+
+	Parameters
+    ----------
+    theta : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Potential temperature (Celsius)
+    S : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Salinity (pss-78)
+    N : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Nitrate (umol/kg)
+    P : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Phosphate (umol/kg)
+    O : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Oxygen (umol/kg)
+    AOU : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Apparent Oxygen Utilization (umol/kg)
+    Si : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+    	Silicate (umol/kg)
+
+    Returns
+    -------
+    Alk_pre_eomp,dc_dis_eomp : `numpy.array` or `xarray.DataArray` or 
+    `pd.core.series.Series`
+    	An array of preformed alkalinity values (umol/kg) and an arrary of
+    	air-sea disequilibrium values (umol/kg)
+    """
 
     theta_A = np.array((5, -1.1, 5, -1.7, 1.5, -0.7))
     S_A = np.array((35.20, 34.88, 33.90, 34.00, 34.70, 34.65))
@@ -459,24 +559,66 @@ def eOMP(theta,S,Si,O,N,P,AOU):
         
     return Alk_pre_eomp,dc_dis_eomp
 
-def phiCT(theta,S,Si,O,N,P,Alk,DIC):
+def phiCT(DIC,Alk,theta,S,N,P,O,Si):
+
+	"""
+	This function calculates anthropogenic carbon in the Atlantic Basin
+	 (Vázquez-Rodríguez et al. 2008)
+
+	Parameters
+    ----------
+    DIC : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+		DIC (umol/kg)
+	Alk : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+		Alkalinity (umol/kg)
+    theta : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Potential temperature (Celsius)
+    S : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Salinity (pss-78)
+    N : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Nitrate (umol/kg)
+    P : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Phosphate (umol/kg)
+    O : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Oxygen (umol/kg)
+    AOU : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+        Apparent Oxygen Utilization (umol/kg)
+    Si : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+    	Silicate (umol/kg)
+
+    Returns
+    -------
+    Cant : `numpy.array` or `xarray.DataArray` or `pd.core.series.Series`
+    	An array of Cant values (umol/kg)
+    """
 
     AOU = aou(O,theta,S)
     
-    Alk_pre_eomp,dc_dis_eomp = eOMP(theta,S,Si,O,N,P,AOU)
+    Alk_pre_eomp,dc_dis_eomp = eOMP(theta=theta,
+    								S=S,
+    								Si=Si,
+    								O=O,
+    								N=N,
+    								P=P,
+    								AOU=AOU)
 
     cstar_phi = dcstar(AOU=AOU,
-    	Alk=Alk,
-    	DIC=DIC,
-    	O=O,
-    	P=P,
-    	S=S,
-    	theta=theta,
-    	N=N,
-    	Si=Si,
-    	Gruber=False)
+    				   Alk=Alk,
+    				   DIC=DIC,
+    				   O=O,
+    				   P=P,
+    				   S=S,
+    				   theta=theta,
+    				   N=N,
+    				   Si=Si,
+    				   Gruber=False)
 
-    dcdis = dc_dis(theta,S,N,P,O,dc_dis_eomp)
+    dcdis = dc_dis(theta=theta,
+    			   S=S,
+    			   N=N,
+    			   P=P,
+    			   O=O,
+    			   dc_dis_eomp=dc_dis_eomp)
 
     Cant = (cstar_phi-dcdis)/(1+0.55*(np.abs(dcdis)/csat_ant(S=S,theta=theta)))
 
